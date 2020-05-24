@@ -1,0 +1,2 @@
+rootProject.name='MS3 Coding Challenge'
+include ':app'
