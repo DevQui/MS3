@@ -17,6 +17,16 @@
             </intent-filter>
         </activity>
         <activity android:name=".ViewListContents"></activity>
+        <provider
+            android:authorities="com.example.ms3codingchallenge.fileprovider"
+            android:name="androidx.core.content.FileProvider"
+            android:grantUriPermissions="true"
+            android:exported="false">
+                <meta-data
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/provider_paths">
+                </meta-data>
+        </provider>
     </application>
 
 </manifest>

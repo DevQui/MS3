@@ -1,18 +1,20 @@
 package com.example.ms3codingchallenge;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.example.ms3codingchallenge.DatabaseHelper;
-import com.example.ms3codingchallenge.R;
-
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -42,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
     }
 
     private List<InfoData> infoData = new ArrayList<>();
@@ -54,6 +57,8 @@ public class MainActivity extends AppCompatActivity {
         );
 
         String line = "";
+        StringBuilder badData = new StringBuilder();
+        badData.append("A,B,C,D,E,F,G,H,I,J");
         try{
             //step over  headers
             reader.readLine();
@@ -92,15 +97,42 @@ public class MainActivity extends AppCompatActivity {
 
                     //add data here to the db
                     AddData(info);
+                }else{
+                    //store to -bad
+                    badData.append("\n" + line);
                 }
             }
-            //store to -bad.csv after reading
-
+            //create csv file
+            createBadCSV(badData);
 
         }catch (IOException e){
             Log.wtf("MyActivity", "Error reading data file on line " + line, e);
             e.printStackTrace();
         }
+    }
+
+    private void createBadCSV(StringBuilder tokens) {
+        try {
+            //saving
+            FileOutputStream out = openFileOutput("data-bad.csv", Context.MODE_PRIVATE);
+            out.write((tokens.toString()).getBytes());
+            out.close();
+
+            //exporting
+            Context context = getApplicationContext();
+            File filelocation = new File(getFilesDir(),"data-bad.csv");
+            Uri path = FileProvider.getUriForFile(context, "com.example.ms3codingchallenge.fileprovider", filelocation);
+            Intent fileIntent = new Intent(Intent.ACTION_SEND);
+            fileIntent.setType("text/csv");
+            fileIntent.putExtra(Intent.EXTRA_SUBJECT, "Bad Data");
+            fileIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); //to access the file attached
+            fileIntent.putExtra(Intent.EXTRA_STREAM, path); //knows where to get the file attached
+            startActivity(Intent.createChooser(fileIntent, "Send mail"));
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
 
     private Boolean verifyData(String[] dataLine) {
