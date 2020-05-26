@@ -8,13 +8,12 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -25,30 +24,17 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     DatabaseHelper myDb;
-    Button btnView;
+    private List<InfoData> invalidData = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnView = (Button) findViewById(R.id.btnView);
         myDb = new DatabaseHelper(this);
 
         readInfoData();
-
-        btnView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, ViewListContents.class);
-                startActivity(intent);
-            }
-        });
-
     }
-
-    private List<InfoData> infoData = new ArrayList<>();
-    private List<InfoData> invalidData = new ArrayList<>();
 
     private void readInfoData() {
         InputStream is = getResources().openRawResource(R.raw.data);
@@ -58,6 +44,9 @@ public class MainActivity extends AppCompatActivity {
 
         String line = "";
         StringBuilder badData = new StringBuilder();
+        StringBuilder counter = new StringBuilder();
+        Integer received = 0, success = 0, failed = 0;
+
         badData.append("A,B,C,D,E,F,G,H,I,J");
         try{
             //step over  headers
@@ -91,27 +80,49 @@ public class MainActivity extends AppCompatActivity {
                             ++i; //10
                         }
                     }
-                    infoData.add(info);
-
-                    Log.d("MyActivity", "Just created: " +info);
 
                     //add data here to the db
                     AddData(info);
-                }else{
-                    //store to -bad
-                    badData.append("\n" + line);
-                }
-            }
-            //create csv file
-            createBadCSV(badData);
 
+                    ++success;
+                }else{
+                    //store to bad
+                    badData.append("\n" + line);
+                    ++failed;
+                }
+                ++received;
+            }
+            createCSVFile(badData);
+            createLogger(received, success, failed);
         }catch (IOException e){
             Log.wtf("MyActivity", "Error reading data file on line " + line, e);
             e.printStackTrace();
         }
     }
 
-    private void createBadCSV(StringBuilder tokens) {
+    private void createLogger(Integer received, Integer success, Integer failed) {
+
+        Context context = getApplicationContext();
+        File filedir = new File(context.getFilesDir(),"ms3.log");
+        if(!filedir.exists()){
+            filedir.mkdir();
+        }
+
+        try{
+            File file = new File(filedir, "ms3.log");
+            FileWriter writer = new FileWriter(file);
+            writer.append("Number of received data is: " + received + "\n");
+            writer.append("Number of success data is: " + success + "\n");
+            writer.append("Number of failed data is: " + failed);
+            writer.flush();
+            writer.close();
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void createCSVFile(StringBuilder tokens) {
         try {
             //saving
             FileOutputStream out = openFileOutput("data-bad.csv", Context.MODE_PRIVATE);
@@ -127,12 +138,11 @@ public class MainActivity extends AppCompatActivity {
             fileIntent.putExtra(Intent.EXTRA_SUBJECT, "Bad Data");
             fileIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); //to access the file attached
             fileIntent.putExtra(Intent.EXTRA_STREAM, path); //knows where to get the file attached
-            startActivity(Intent.createChooser(fileIntent, "Send mail"));
+            startActivity(Intent.createChooser(fileIntent, "Send Mail"));
 
         }catch (Exception e){
             e.printStackTrace();
         }
-
     }
 
     private Boolean verifyData(String[] dataLine) {
@@ -163,14 +173,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void AddData(InfoData info) {
+        //getting the values
         boolean insertData = myDb.addData(info.getColA(), info.getColB(), info.getColC(),
                 info.getColD(), info.getColE(), info.getColF(), info.getColG(), info.getColH(),
                 info.getColI(), info.getColJ());
 
+        Context context = getApplicationContext();
         if(insertData == true){
-            Toast.makeText(MainActivity.this, "Successfully Entered Data!", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "Successfully Entered Data!", Toast.LENGTH_SHORT).show();
         }else{
-            Toast.makeText(MainActivity.this, "Error! Something Went Wrong", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "Error! Something Went Wrong", Toast.LENGTH_SHORT).show();
         }
     }
 

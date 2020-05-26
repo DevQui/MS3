@@ -8,16 +8,5 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <Button
-            android:id="@+id/btnView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="57dp"
-            android:text="View Data"
-            tools:layout_editor_absoluteX="156dp"
-            tools:layout_editor_absoluteY="290dp" />
-
-    </RelativeLayout>
+        android:layout_height="match_parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
